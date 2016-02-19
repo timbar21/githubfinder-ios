@@ -10,8 +10,9 @@ import UIKit
 import MBProgressHUD
 
 // Main ViewController
-class RepoResultsViewController: UIViewController {
+class RepoResultsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate{
 
+    @IBOutlet weak var repoTable: UITableView!
     var searchBar: UISearchBar!
     var searchSettings = GithubRepoSearchSettings()
 
@@ -23,15 +24,39 @@ class RepoResultsViewController: UIViewController {
         // Initialize the UISearchBar
         searchBar = UISearchBar()
         searchBar.delegate = self
-
+        
         // Add SearchBar to the NavigationBar
         searchBar.sizeToFit()
         navigationItem.titleView = searchBar
 
+        //autoresizing
+        repoTable.estimatedRowHeight = 100
+        repoTable.rowHeight = UITableViewAutomaticDimension
+        
         // Perform the first search when the view controller first loads
         doSearch()
+        
+        repos = []
+        //add repo as datasource
+        repoTable.dataSource = self
+        repoTable.delegate = self
+       
     }
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCellWithIdentifier("com.repocell", forIndexPath: indexPath) as! repoCell
+        let repoo = repos[indexPath.row]
+        cell.nameLabel.text = repoo.name
+        cell.forksLabel.text = repoo.forks as! String
+        cell.descriptionLabel.text = repoo.description
+        cell.starsLabel.text = repoo.stars as! String
+        cell.ownerLabel.text = repoo.ownerHandle
+        //cell.avatarImage.image = UIImage(repoo.ownerAvatarURL)
 
+        return cell
+    }
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return repos.count
+    }
     // Perform the search.
     private func doSearch() {
 
@@ -41,10 +66,14 @@ class RepoResultsViewController: UIViewController {
         GithubRepo.fetchRepos(searchSettings, successCallback: { (newRepos) -> Void in
 
             // Print the returned repositories to the output window
-            for repo in newRepos {
-                print(repo)
-            }   
+            
+            self.repos = []
 
+            for repo in newRepos {
+                print (repo)
+                self.repos.append(repo)
+            }
+            self.repoTable.reloadData()
             MBProgressHUD.hideHUDForView(self.view, animated: true)
             }, error: { (error) -> Void in
                 print(error)
